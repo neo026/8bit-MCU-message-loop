@@ -303,6 +303,6 @@ void batteryMonitor(void)
 	else
 		batteryInit();
 
-	messageSend(EventBatteryMonitor, 0, 100);
+	messageSend(EventBatteryMonitor, 0, T_MS(100));
 }
 

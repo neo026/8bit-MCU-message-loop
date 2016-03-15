@@ -30,8 +30,6 @@
 #include "ad.h"
 #include "timer.h"
 
-#define ENABLE_SERIAL	1
-
 #if ENABLE_SERIAL 
 #include "utils/serial.h"
 #endif
@@ -73,10 +71,10 @@ void PORT_Init( void )
 {
 	/* Initialize the mode registers */
 	PM0	= PM0_DEFAULT | ~(1 << 0);
-	PM3 = PM3_DEFAULT;
+	PM3 = PM3_DEFAULT | ~(1 << 3);
 	PM4 = PM4_DEFAULT;
 	PM6 = PM6_DEFAULT;
-	PM7 = PM7_DEFAULT;
+	PM7 = PM7_DEFAULT | ~(1 << 4) | ~(1 << 5);
 	PM12 = PM12_DEFAULT | (1 << 0);
 	PM14 = PM14_DEFAULT;
 

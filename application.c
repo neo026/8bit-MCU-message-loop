@@ -3,6 +3,7 @@
 #include "message.h"
 #include "batteryManager.h"
 #include "key.h"
+#include "utils/pwm.h"
 
 void runningStop(uint8 errno)
 {
@@ -17,7 +18,7 @@ void myMemset(const void *src, uint8 value, uint8 len)
 	uint8 *p = (uint8*)src;
 	
 	if((NULL == src) || (0 == len))	
-		runningStop(EER_MEMSET);  
+		runningStop(ERR_MEMSET);  
 	
 	while(len)
 		p[len --] = value;
@@ -69,7 +70,6 @@ void eventPowerOn(void)
 		// open some switch
 
 		// start monitor the battery voltage and temperature
-		//messageSend(EventBatteryMonitor, 0, 30);
 
 	}
 }
@@ -142,10 +142,10 @@ void messageHandler(const message_type *msg)
 	switch(msg->event)
 	{
 		case EventEnterLimbo:
-			debugMsg("eventEnterLimbo", 0);
+			//debugMsg("eventEnterLimbo", 0);
 			//eventEnterLimbo();
 			P0.0 ^= 1;
-			messageSend(EventEnterLimbo, 0, 3000);
+			messageSend(EventEnterLimbo, 0, T_MS(500));
 			break;
 			
 		case EventReady:
@@ -192,11 +192,13 @@ void messageHandler(const message_type *msg)
 		case EventVolSub:
 			debugMsg("eventVolSub",0);
 			eventVolSub();
+			ledFadeStart(LED_POWER, FADE_TIME(3000));
 			break;
 
 		case EventVolAdd:
 			debugMsg("eventVolAdd",0);
 			eventVolAdd();
+			ledFadeStop();
 			break;
 
 		case EventMode:

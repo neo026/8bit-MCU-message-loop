@@ -1,5 +1,5 @@
 
-#include "private.h"
+#include "../private.h"
 #include "led.h"
 
 static led_type theLed;
@@ -8,6 +8,21 @@ void ledOnOff(uint8 led, uint8 on)
 {
 	if(led & LED_POWER)			GPIO_LED_POWER(on);
 	if(led & LED_CHARGER)		GPIO_LED_CHARGER(on);
+	if(led & LED_VOLSUB)		GPIO_LED_VOLSUB(on);
+	if(led & LED_VOLADD)		GPIO_LED_VOLADD(on);
+}
+
+void ledFlashInit(void)
+{
+	// shut down all the Flash LED
+	ledOnOff(LED_CHARGER | LED_POWER, OFF);
+		
+	theLed.led = LED_NONE;
+	theLed.count = 0;
+	theLed.onTime = 0;
+	theLed.offTime = 0;
+	theLed.on = OFF;
+	theLed.time = 0;
 }
 
 // led -> which led, 
@@ -39,18 +54,7 @@ void ledFlashStop(void)
 	theLed.time = 0;
 }
 
-void ledFlashInit(void)
-{
-	// shut down all the Flash LED
-	ledOnOff(LED_CHARGER | LED_POWER, OFF);
-		
-	theLed.led = LED_NONE;
-	theLed.count = 0;
-	theLed.offTime = 0;
-	theLed.on = OFF;
-	theLed.onTime = 0;
-	theLed.time = 0;
-}
+
 
 void ledFlashLoop(void)
 {

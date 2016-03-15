@@ -4,9 +4,6 @@
 
 #include "macrodriver.h"
 
-// open or close the debug
-#define ENABLE_SERIAL	1
-
 #if ENABLE_SERIAL
 #include "utils/serial.h"
 #define debugMsg	sendStringWithData
@@ -32,11 +29,9 @@ enum
 typedef struct
 {
 	// timers
-	uint8 timer1ms;
-	uint8 timer100ms;
-	
-	// delay timer for delay function, exactly
-	uint8 delayTimer;
+	uint8 timerMsgTick;		// timer for message loop
+	uint8 timerTick;		// timer tick, uint 500us
+	uint8 timerDelay;		// timer for delay function
 
 	// machine status
 	uint8 state;
@@ -53,10 +48,18 @@ typedef struct
 
 extern application_type gProject;
 
-// Eeror Number
-#define EER_NONE		0
-#define EER_MEMSET		1
-#define EER_MSG_FULL	2
+// Error Number
+#define ERR_NONE		0
+#define ERR_MEMSET		1
+#define ERR_MSG_FULL	2
+
+// LED 
+#define LED_NONE		0x00
+#define LED_POWER		(1 << 0)
+#define LED_CHARGER		(1 << 1)
+#define LED_VOLSUB		(1 << 2)
+#define LED_VOLADD		(1 << 3)
+#define LIMITLESS		0x00
 
 
 /*----------------GPIO Configuration------------------*/
@@ -65,9 +68,11 @@ extern application_type gProject;
 #define GPIO_SDA			(P2.1)
 #define GPIO_SCK_MODE(x)	(P2.1)
 #define GPIO_SDA_MODE(x)	(P2.1)
-#define GPIO_LED_POWER(x)	(P2.1)
-#define GPIO_LED_CHARGER(x)	(P2.1)
 
+#define GPIO_LED_POWER(x)	(P3.3 = x)
+#define GPIO_LED_CHARGER(x)	(P0.0 = x)
+#define GPIO_LED_VOLSUB(x)	(P7.5 = x)
+#define GPIO_LED_VOLADD(x)	(P7.4 = x)
 //
 #define GPIO_BN_POWER		(P12.0)
 

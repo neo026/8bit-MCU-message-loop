@@ -56,7 +56,7 @@ void messageAdd(uint8 event, uint8 mdata, uint16 interval)
 	else
 	{
 		//message queque is full
-		runningStop(EER_MSG_FULL);
+		runningStop(ERR_MSG_FULL);
 	}
 }
 /*
@@ -103,8 +103,8 @@ void messageLoop(void)
 {
 	uint8 i;
 	uint8 needApply = FALSE;
-	uint8 time = gProject.timer1ms;		// save time tick
-	gProject.timer1ms = 0 ;				// restart time tick
+	uint8 time = gProject.timerMsgTick;		// save time tick
+	gProject.timerMsgTick = 0 ;				// restart time tick
 
 	// decrease the interval time of message
 	for(i = 0; i < remainingMsg; i ++)
