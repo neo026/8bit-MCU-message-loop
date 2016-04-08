@@ -21,12 +21,16 @@ typedef struct
 }key_type;
 
 // need add 50 adc value
-#define KEY1	50		
-#define KEY2	333
-#define KEY3	644
-#define KEY4	991
+#define KEY1	0
+#define KEY2	283
+#define KEY3	594
+#define KEY4	941
 
-#define KEY_NONE	0
+#define KEY0	1023
+#define KEYT	50
+
+#define KEY_ERR		0xff		// detect error or sample error, something multi keys press will cause it
+#define KEY_NONE	0x0			// key release
 #define KEY_POWER	(1 << 0)
 #define KEY_VOLSUB	(1 << 1)
 #define KEY_VOLADD	(1 << 2)

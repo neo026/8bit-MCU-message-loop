@@ -2,8 +2,6 @@
 #ifndef _SERIAL_H
 #define _SERIAL_H
 
-
-
 /*
 *******************************************************************************
 **   UART6n
@@ -113,10 +111,64 @@
 #define	UART_BAUDRATE_M6	0x0
 #define	UART_BAUDRATE_K6	0x68
 
-void UART6_Init( void );
-void UART6_OnOff(uint8 on);
-void sendStringWithData(const char *str, uint8 argv);
-void sendHex(const char *str, void *argv);
+/* Received Commands*/
+enum
+{
+	CMD_POWERON,
+	CMD_POWEROFF,
+	CMD_GET_STATUS,
+	CMD_PHONE_NUMBER,
+	CMD_SET_LED,
+	CMD_KEY,
+	CMD_MODE,
+	CMD_SET_AMP,
+};
 
-#define sendString(x) sendStringWithData(x, 0)
+enum
+{
+	U_KEY_RESERVED,
+	U_KEY_PLAY,
+	U_KEY_CALL,
+	U_KEY_REJECT,
+	U_KEY_VOLUME_UP,
+	U_KEY_VOLUME_DOWN,
+	U_KEY_FORWARD,
+	U_KEY_BACKWARD,
+	U_KEY_FAST_FORWARD,
+	U_KEY_FAST_BACKWARD,
+};
+
+/* Response acknowledge value */
+#define ACK_OK				0x00
+#define ACK_WRONG_LENGTH	0x01
+#define ACK_WRONG_STATUS	0x02
+
+/*Following program is for Serial RX and TX work, this set of code is NOT for debuging information.*/
+#define SERIAL_RX_BUFFER_LENGTH	255	//
+#define SERIAL_TX_BUFFER_LENGTH	127	//
+
+typedef struct 
+{
+	uint8 rxBuffer[SERIAL_RX_BUFFER_LENGTH + 1];	// ring buffer
+	uint8 rxPutIndex;	// put RX register data into the rxBuffer, this will done at RX interrupt service handle rountine
+	uint8 rxGetIndex;	// get received data from the rxBuffer, that data will be handled by main while(1).
+
+	uint8 txBuffer[SERIAL_TX_BUFFER_LENGTH + 1];
+	uint8 txPutIndex:7;
+	uint8 txGetIndex:7;
+}serial_type;
+
+extern serial_type theSerial;
+/*------------------------------------------------*/
+void serialInit(void);
+void serialEnable(uint8 enable);
+void serialLoop(void);
+void serialSendNum(uint8 num);
+void serialSendString(const char *str);
+void serialSendStringWithData(const char *str, uint8 argv);
+
+void sendPacket(uint8 cmd, uint8 *pdata, uint8 data_size);
+void cmdHandler(uint8 cmd, uint8 startIndex, uint8 data_size);
+//void gernateFrame(void);
+
 #endif // _SERIAL_H

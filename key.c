@@ -11,7 +11,7 @@ static void keyPress(uint8 keyno)
 	switch(keyno)
 	{
 		case KEY_POWER:
-			messageSend(EventPowerOn, 0, 0);
+			messageSend(EventPowerKey, 0, 0);
 			break;
 
 		case KEY_VOLSUB:
@@ -23,7 +23,7 @@ static void keyPress(uint8 keyno)
 			break;
 
 		case KEY_BT:
-			messageSend(EventMode, 0, 0);
+			messageSend(EventBtKey, 0, 0);
 			break;
 
 		case KEY_PHONE:
@@ -69,19 +69,20 @@ static void keyRepeat(uint8 keyno)
 
 static uint8 getPressKey(void)
 {
-	uint8 key;
+	uint8 key = KEY_NONE;
 	uint16 value;
 
 	/*Power key press or not*/
 	if(GPIO_BN_POWER == 0)
 	{
 		key = KEY_POWER;
-		return key;
+		//return key;
 	}
 	
 	/*Get ADC*/
 	value = getAdcValue(ADC_KEY);
 
+#if 0	/*simple handle method, it will error if there is multi key press at the same time*/
 	if(value < KEY1)
 		key |= KEY_VOLSUB;
 	else if(value < KEY2)
@@ -92,6 +93,33 @@ static uint8 getPressKey(void)
 		key |= KEY_PHONE;
 	else
 		key |= KEY_NONE;
+#else	/**/
+	if(value < (KEY1 + KEYT))
+	{
+		key |= KEY_VOLSUB;
+	}
+	else if(value > (KEY2 - KEYT) && value < (KEY2 + KEYT))	
+	{
+		key |= KEY_VOLADD;
+	}
+	else if(value > (KEY3 - KEYT) && value < (KEY3 + KEYT))
+	{
+		key |= KEY_BT;
+	}
+	else if(value > (KEY4 - KEYT) && value < (KEY4 + KEYT))
+	{
+		key |= KEY_PHONE;
+	}
+	else if(value > (KEY0 - KEYT - KEYT))
+	{
+		key |= KEY_NONE;	// key release
+	}
+	else
+	{
+		key = KEY_ERR;		// key sample value is not defined
+	}
+
+#endif
 
 	return key;
 }
@@ -108,6 +136,9 @@ void keyLoop(void)
 {
 	uint8 temp = getPressKey();
 
+	if(KEY_ERR == temp)
+		return ;
+	
 	// update key value
 	theKey.keyValueLast = theKey.keyValue;
 	theKey.keyValue	 = temp;
@@ -202,7 +233,7 @@ void keyLoop(void)
 		{
 			/*Key press handle*/
 			/*debounce*/
-			delay1ms(80);
+			delay1ms(20);
 			/*Get the key value again*/
 			temp = getPressKey();
 

@@ -2,25 +2,35 @@
 #ifndef _MESSAGE_H
 #define _MESSAGE_H
 
+enum
+{
 //index 0x00 ~ 0x05, for sepecial events, don't modify
-#define EventEmpty					0x00		// special event
+	EventEmpty,
+	EventLoopBack,
+	// general events
+	EventEnterLimbo = 0x06,
+	EventPowerKey,
+	EventReady,
+	EventPowerOn,
+	EventPowerOff,
+	
+	EventBatteryMonitor,
+	EventBatteryLow,
+	
+	EventChargerConnected,
+	EventChargerDisconnected,
+	EventChargerOnOff,
+	EventChargerStatus,
+	EventChargerDetectStart,
+	
+	EventVolSub,
+	EventVolAdd,
+	EventBtKey,
+	EventPhoneKey,
+	EventAmp,
+	EventVolFadeIn
 
-// general events
-#define	EventEnterLimbo				0x06
-#define	EventReady					0x07
-#define	EventPowerOn				0x08
-#define	EventPowerOff				0x09
-#define	EventBatteryMonitor			0x0A
-#define	EventBatteryLow				0x0B
-#define	EventChargerConnected		0x0C
-#define	EventChargerDisconnected	0x0D
-#define	EventChargerOnOff			0x0E
-#define	EventChargerError			0x0F
-#define	EventChargerCompleted		0x10
-#define EventVolSub					0x11
-#define EventVolAdd					0x12
-#define EventMode					0x13
-#define EventPhoneKey				0x14
+};
 
 //message struct, it is very simple.
 typedef struct _message_type

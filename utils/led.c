@@ -10,6 +10,7 @@ void ledOnOff(uint8 led, uint8 on)
 	if(led & LED_CHARGER)		GPIO_LED_CHARGER(on);
 	if(led & LED_VOLSUB)		GPIO_LED_VOLSUB(on);
 	if(led & LED_VOLADD)		GPIO_LED_VOLADD(on);
+	if(led & LED_BT)			GPIO_LED_BT(on);
 }
 
 void ledFlashInit(void)
@@ -18,17 +19,12 @@ void ledFlashInit(void)
 	ledOnOff(LED_CHARGER | LED_POWER, OFF);
 		
 	theLed.led = LED_NONE;
-	theLed.count = 0;
-	theLed.onTime = 0;
-	theLed.offTime = 0;
-	theLed.on = OFF;
-	theLed.time = 0;
 }
 
-// led -> which led, 
+// led -> which led, unit 100ms
 void ledFlashStart(uint8 led, uint8 onTime, uint8 offTime, uint8 count)
 {
-	if((LED_NONE == theLed.led) || (0 == onTime) ||(0 == offTime))
+	if((LED_NONE == led) || (0 == onTime) ||(0 == offTime))
 		return ;
 
 	theLed.led = led;
@@ -47,14 +43,7 @@ void ledFlashStop(void)
 	
 	ledOnOff(theLed.led, OFF);
 	theLed.led = LED_NONE;
-	theLed.offTime = 0;
-	theLed.onTime = 0;
-	theLed.count = 0;
-	theLed.on = OFF;
-	theLed.time = 0;
 }
-
-
 
 void ledFlashLoop(void)
 {
@@ -70,7 +59,7 @@ void ledFlashLoop(void)
 		theLed.on ^= 1;
 		theLed.time = theLed.on ? theLed.onTime : theLed.offTime;		
 		ledOnOff(theLed.led, theLed.on);
-
+		
 		// calc the count of this led flash
 		if(LIMITLESS != theLed.count)
 		{
