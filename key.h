@@ -5,6 +5,7 @@
 enum
 {
 	noPressFlag,
+	keyDebounceFlag,
 	shortPressFlag,
 	longPressFlag,
 	vLongPressFlag,
@@ -13,7 +14,6 @@ enum
 
 typedef struct
 {
-	uint8 keyValue;		/*Save Current Press Key value*/
 	uint8 keyValueLast;	/*Save Last Press Key value*/
 	uint8 keyStatus;
 	uint8 keyHoldTimeCnt;

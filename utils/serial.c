@@ -264,9 +264,9 @@ void rxLoop(void)
 	byte = buff[getIndex];
 	
 	// HEADER + LENGTH + CMD + DATA+ CHECKSUM
-	if(rxFindFlag == FLAG_HEAD0)
+	if(rxFindFlag == FLAG_HEAD0)	//Find fist byte of header
 	{
-		if(byte == packet_header[0])
+		if(byte == packet_header[0]) // if find it, set flag, otherwise, keep to checking next byte
 			rxFindFlag = FLAG_HEAD1;
 
 	}
@@ -286,7 +286,7 @@ void rxLoop(void)
 	else if(rxFindFlag == FLAG_LENGTH)
 	{
 		packet_length = byte - 1;	// because packet_length contains itself.
-		if(byte >= MIN_PKT_LENGTH)
+		if((byte >= MIN_PKT_LENGTH) && (byte < (256 - MIN_PKT_LENGTH)))
 		{
 			rxFindFlag = FLAG_PDU;
 			startIndex = getIndex;

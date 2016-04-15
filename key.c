@@ -126,10 +126,69 @@ static uint8 getPressKey(void)
 
 void keyInit(void)
 {
-	theKey.keyHoldTimeCnt = 0;
 	theKey.keyStatus = noPressFlag;
 	theKey.keyValueLast = KEY_NONE;
-	theKey.keyValue = KEY_NONE;
+}
+
+void pressKey(void)
+{
+	/*Key hold handle*/
+
+	//theKey.keyHoldTimeCnt ++;   --> Note don't write it here, it will overflow when someone is always pressing the key
+	if(keyDebounceFlag == theKey.keyStatus)
+	{
+		keyPress(theKey.keyValueLast);
+		theKey.keyStatus = shortPressFlag;
+	}
+	else if(shortPressFlag == theKey.keyStatus)
+	{
+		theKey.keyHoldTimeCnt ++;
+		if(theKey.keyHoldTimeCnt >= KEY_LONG_TIME)
+		{
+			/*long press*/
+			longPress(theKey.keyValueLast);
+			theKey.keyStatus = longPressFlag;
+		}
+	}
+	else if(longPressFlag == theKey.keyStatus)
+	{
+		theKey.keyHoldTimeCnt ++;
+		if(theKey.keyHoldTimeCnt > KEY_VLONG_TIME)
+		{
+			vLongPress(theKey.keyValueLast);
+			theKey.keyStatus = vLongPressFlag;
+		}
+	}
+
+	/*Here add Repeat and VVLong Press handle*/
+	theKey.keyRepeatTimeCnt ++;
+	if(theKey.keyRepeatTimeCnt > KEY_REPEAT_TIME)
+	{
+		theKey.keyRepeatTimeCnt = 0;
+		keyRepeat(theKey.keyValueLast);
+	}
+}
+
+void releaseKey(void)
+{
+	/*Key typematic handle*/
+	if(shortPressFlag == theKey.keyStatus)
+	{
+		/*Short press release*/
+		shortPressRelease(theKey.keyValueLast);
+	}
+	else if(longPressFlag == theKey.keyStatus)
+	{
+		/*Long press release*/
+		longPressRelease(theKey.keyValueLast);
+	}
+	else if(vLongPressFlag == theKey.keyStatus)
+	{
+		/*Very long press release*/
+		vLongPressRelease(theKey.keyValueLast);
+	}
+
+	theKey.keyStatus = noPressFlag;
 }
 
 void keyLoop(void)
@@ -138,15 +197,38 @@ void keyLoop(void)
 
 	if(KEY_ERR == temp)
 		return ;
-	
-	// update key value
-	theKey.keyValueLast = theKey.keyValue;
-	theKey.keyValue	 = temp;
 
 	// invalid key value
-	if((KEY_NONE == theKey.keyValue) && (KEY_NONE == theKey.keyValueLast))
+	if((KEY_NONE == temp) && (KEY_NONE == theKey.keyValueLast))
 		return;
 
+	if(LED_NONE == theKey.keyValueLast)
+	{
+		// there is a new key
+		theKey.keyStatus = keyDebounceFlag;
+		// clear
+		theKey.keyRepeatTimeCnt = 0;
+		theKey.keyHoldTimeCnt = 0;
+	}
+	else
+	{
+		if(KEY_NONE == temp)		// key was released
+		{
+			// there is a release key
+			releaseKey();
+		}
+		else
+		{
+			// there is keep status, or typematic key
+			if(temp == theKey.keyValueLast)	// key keep pressing
+				pressKey();
+			else
+				releaseKey();
+		}
+	}
+
+	theKey.keyValueLast = temp;
+#if 0
 	if(KEY_NONE == theKey.keyValue)
 	{
 		/*Key release  handle*/
@@ -175,8 +257,12 @@ void keyLoop(void)
 		/*Key hold handle*/
 
 		//theKey.keyHoldTimeCnt ++;   --> Note don't write it here, it will overflow when someone is always pressing the key
-
-		if(shortPressFlag == theKey.keyStatus)
+		if(keyDebounceFlag == theKey.keyStatus)
+		{
+			keyPress(theKey.keyValue);
+			theKey.keyStatus = shortPressFlag;
+		}
+		else if(shortPressFlag == theKey.keyStatus)
 		{
 			theKey.keyHoldTimeCnt ++;
 			if(theKey.keyHoldTimeCnt >= KEY_LONG_TIME)
@@ -231,11 +317,16 @@ void keyLoop(void)
 		}
 		else
 		{
+			theKey.keyStatus = keyDebounceFlag;		// this a new press, we need debounce this key
+			
+			#if 0
 			/*Key press handle*/
 			/*debounce*/
 			delay1ms(20);
 			/*Get the key value again*/
 			temp = getPressKey();
+
+			theKey.keyStatus = keyDebounceFlag;
 
 			if(temp == theKey.keyValue)
 			{
@@ -247,11 +338,12 @@ void keyLoop(void)
 				theKey.keyValue = KEY_NONE;
 				theKey.keyStatus = noPressFlag;
 			}
-
+			#endif
 		}
 
 		theKey.keyRepeatTimeCnt = 0;
 		theKey.keyHoldTimeCnt = 0;
 	}
+#endif
 }
 
