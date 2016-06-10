@@ -69,8 +69,8 @@ void TM50_Init()
 
 	TCL50 = 0x05;
 
-	 /* TM50 interval mode, 1ms interval timeout */
-	CR50 = 124;  
+	 /* TM50 interval mode, 500us interval timeout */
+	CR50 = 62;  
 	TMC50 = 0x02;	
 	
 	TM50_OnOff(ON);

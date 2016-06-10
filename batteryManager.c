@@ -7,10 +7,39 @@
 #include "ad.h"
 #include "message.h"
 
-#define CHARGING_NORMAL_INTERVAL            (3600)           
-#define CHARGING_HIGH_INTERVAL              (2400)
+#define CHARGING_NORMAL_INTERVAL            (1200) // unit: 1sec         
+#define CHARGING_HIGH_INTERVAL              (600)
 
 static battery_type theBattery;
+
+#define DBG_BAT_ENABLE 1
+
+
+uint16 adcValueTbl[] =
+{
+	702,
+	713,
+	724,
+	735,
+	746,
+	757,
+	769,
+	780,
+	791,
+	802,
+	813,
+	824,
+	835,
+	847,
+	858,
+	869,
+	880,
+	891,
+	902,
+	913,
+	925
+	
+};
 
 /*
 *   update the voltage level.
@@ -18,53 +47,15 @@ static battery_type theBattery;
 static uint8 getAdcLevel(uint16 adcValue)
 {
 	uint8 level;
-#if 0
-    if(adcValue < )             // battery is pluged out by someone
-        level = BATT_L00;
-    else if(adcValue < )        // battery is too low, must be shut down machine
-        level = BATT_L01;
-    else if(adcValue < )        
-        level = BATT_L02;
-    else if(adcValue < )        
-        level = BATT_L03; 
-    else if(adcValue < )        
-        level = BATT_L04; 
-    else if(adcValue < )        
-        level = BATT_L05;
-    else if(adcValue < )        
-        level = BATT_L06; 
-    else if(adcValue < )       
-        level = BATT_L07;
-    else if(adcValue < )       
-        level = BATT_L08;
-    else if(adcValue < )       
-        level = BATT_L09;
-    else if(adcValue < )       
-        level = BATT_L10;
-    else if(adcValue < )       
-        level = BATT_L11;
-    else if(adcValue < )       
-        level = BATT_L12;
-    else if(adcValue < )       
-        level = BATT_L13;
-    else if(adcValue < )       
-        level = BATT_L14;
-    else if(adcValue < )       
-        level = BATT_L15;
-    else if(adcValue < )       
-        level = BATT_L16;
-    else if(adcValue < )       
-        level = BATT_L17;
-    else if(adcValue < )       
-        level = BATT_L18;
-    else if(adcValue < )       
-        level = BATT_L19;
-    else     
-        level = BATT_L20;
-#endif
+
+	for(level = BATT_L00; level < BATT_FULL; level ++)
+	{
+		if(adcValue < adcValueTbl[level])
+			break;
+	}
+
 	return level;
 }
-
 
 /*
 *   Battery Initial
@@ -74,7 +65,11 @@ void batteryInit(void)
     uint16 tmpValue;
     uint8 i;
 	uint8 level;
-    
+
+	#if DBG_BAT_ENABLE
+		debugStr("battery Initial\n");
+	#endif
+	
     // get battery voltage first
     for(tmpValue = 0, i = 0 ; i < MAX_AV_COUNT; i ++)
         tmpValue += getAdcValue(batteryVoltage);
@@ -113,7 +108,28 @@ void batteryInit(void)
 
 	// do some indication when battery low
 
+	theBattery.temperatureStatus = temperature_normal;
+	gProject.chargingSpeed = normal;
+	
 	theBattery.initialising = TRUE;
+}
+
+void checkChargingTime(void)
+{
+	// when charging, we need to increase the charging time(uint:1sec)
+	if(chargerCharging == gProject.chargerStatus)
+	{
+		theBattery.chargingCount ++;
+	}
+	else
+	{
+		// when charging stop, we need to decrease the charging time, do not clear immediately, for such a situation:
+		// if charger plug out when do not reach the setting charging time,
+		// and then charger plug in again, battery level will not  increase, but actually the battery voltage was up slowly
+		if(theBattery.chargingCount > 0)
+			theBattery.chargingCount --;
+	}
+
 }
 
 /*
@@ -126,7 +142,10 @@ void checkBatteryTemperature(void)
     
     tmpValue = getAdcValue(batteryTemperature);
 
-   if(chargerCharging ==  gProject.chargerStatus)
+	theBattery.temperatureStatus = temperature_normal;
+	return;
+
+   if(ON ==  gProject.chargerOnOff)
    {
         if(tmpValue < 11)
             theBattery.temperatureStatus = temperature_unnormal;
@@ -134,7 +153,6 @@ void checkBatteryTemperature(void)
             theBattery.temperatureStatus = temperature_normal;
         else
             theBattery.temperatureStatus = temperature_unnormal;
-            
     }
     else
     {
@@ -144,11 +162,10 @@ void checkBatteryTemperature(void)
             theBattery.temperatureStatus = temperature_normal;
         else
             theBattery.temperatureStatus = temperature_unnormal;
-
     }
 
     // handle the battery temperature status below, such as indications
-    if(chargerCharging ==  gProject.chargerStatus)
+    if(ON ==  gProject.chargerOnOff)
     {
         // stop charging
         if(temperature_unnormal == theBattery.temperatureStatus)
@@ -172,7 +189,7 @@ void detectAlgorithm(void)
 
     // 0, get the voltage level
     level = getAdcLevel(getAdcValue(batteryVoltage));
-	
+
 	// 1, remove the head(or first) value, add a new value at tail.
     for(i = 1; i < MAX_AV_COUNT; i ++)
         theBattery.currentVoltArray[i - 1] = theBattery.currentVoltArray[i];
@@ -180,7 +197,7 @@ void detectAlgorithm(void)
     theBattery.currentVoltArray[i - 1] = level;
 
     // 2, calculate the current average of battery voltage
-    for(level = 0, i = 1; i < MAX_AV_COUNT; i ++)
+    for(level = 0, i = 0; i < MAX_AV_COUNT; i ++)
         level += theBattery.currentVoltArray[i];
 
     level /= MAX_AV_COUNT;
@@ -189,8 +206,21 @@ void detectAlgorithm(void)
     if(level < theBattery.minVolt)
         theBattery.minVolt = level;
 
+	/*debug*/
+	#if DBG_BAT_ENABLEx
+		debugStr("BAT:\n");
+		for(i = 0; i < MAX_AV_COUNT; i++)
+			debugNum(theBattery.currentVoltArray[i]);
+		
+		debugMsg("MV:", theBattery.minVolt);
+	#endif
+
     // 4, calulate the average voltage of battery, for Battery voltage display quickly
     theBattery.currentAverVolt = (theBattery.minVolt + level) / 2;
+
+	#if DBG_BAT_ENABLEx
+		debugMsg("CAV:", theBattery.currentAverVolt);
+	#endif
 
     // 5, update average voltage arrary
     for(i = 1; i < MAX_AAV_COUNT; i ++)
@@ -204,8 +234,56 @@ void detectAlgorithm(void)
         
     theBattery.averageAverVolt = level / MAX_AAV_COUNT;
 
+	#if DBG_BAT_ENABLEx
+		for(i = 0; i < MAX_AAV_COUNT; i++)
+			debugNum(theBattery.averageVoltArrary[i]);
+		
+		debugMsg("AAV:", theBattery.averageAverVolt);
+	#endif
 }
 
+uint8 batteryIsNormal(void)
+{
+	return (theBattery.temperatureStatus == temperature_normal) ? TRUE : FALSE;
+}
+
+void batteryChargerStatus(void)
+{
+	static uint8 chargerLedCnt = 0;
+	static uint8 chargerLedHighCnt = 0;
+	uint8 status;
+	
+	// charge status detection
+	if(gProject.chargerStartCnt && gProject.chargerOnOff == ON)
+	{
+		chargerLedCnt ++;
+		
+		if(GPIO_CHARGER_LED)
+			chargerLedHighCnt ++;
+		
+		if(chargerLedCnt ++ > 10)
+		{
+			if(chargerLedHighCnt > 5)
+				status = chargerCharging;
+			else if(chargerLedHighCnt < 2)
+				status = chargerChargingComplete;
+			else
+				status = chargerError;
+
+			if(status != gProject.chargerStatus)
+				messageSend(EventChargerStatus, status, 0);
+				
+			chargerLedCnt = 0;
+			chargerLedHighCnt = 0;
+		}
+		
+	}
+	else
+	{
+		chargerLedCnt = 0;
+		chargerLedHighCnt = 0;
+	}
+}
 void batteryProcess(void)
 {
 	if(gProject.battLevel < BATT_LOW1)
@@ -218,8 +296,8 @@ void batteryProcess(void)
 	}
 	else
 	{
-		if(StatePowerOn == gProject.state)
-			messageSend(EventPowerOff, 0, 0);
+		//if(StatePowerOn == gProject.state)
+		//	messageSend(EventPowerOff, 0, 0);
 	}
 }
 
@@ -229,32 +307,32 @@ void batteryProcess(void)
 void batteryLoop(void)
 {
     uint8 setFlag = 0;
-
-    // detect the temperature of battery
+	
+	// detect the temperature of battery
     checkBatteryTemperature();
 
     // always detect the battery voltage ADC value.
     detectAlgorithm();
 
     // calculate the step by the time, and update the battery step
-    if(chargerCharging ==  gProject.chargerStatus)
+    if(ON ==  gProject.chargerOnOff)
     {
     	// some machines have two ways to  charge battery.
        if(normal == gProject.chargingSpeed)
         {
-            if(gProject.chargingCount > CHARGING_NORMAL_INTERVAL)
+            if(theBattery.chargingCount > CHARGING_NORMAL_INTERVAL)
                 setFlag = 1;
         }
         else
         {
-            if(gProject.chargingCount > CHARGING_HIGH_INTERVAL)
+            if(theBattery.chargingCount > CHARGING_HIGH_INTERVAL)
                 setFlag = 1;
         }
 
 		// charging interval timeout, change the battery step for indication
         if(setFlag)
         {
-            gProject.chargingCount = 0;
+            theBattery.chargingCount = 0;
             if(theBattery.battChargingStep > BATT_FULL)
                 theBattery.battChargingStep = BATT_FULL;
 			else
@@ -274,7 +352,7 @@ void batteryLoop(void)
 		{
 			gProject.battLevel = theBattery.averageAverVolt;			
 			theBattery.battChargingStep = theBattery.averageAverVolt;
-			gProject.chargingCount = 0;
+			theBattery.chargingCount = 0;
 		}
 		else
 		{
@@ -290,6 +368,12 @@ void batteryLoop(void)
 		}
     }
 
+	#if DBG_BAT_ENABLEx
+		debugMsg("battLevel:", gProject.battLevel);
+		debugStr("chargingCount: ");
+		debugNum((uint8)(theBattery.chargingCount >> 8));
+		debugNum((uint8)theBattery.chargingCount);
+	#endif
 	
 	// handling the battery indication		
 	batteryProcess();
@@ -303,6 +387,6 @@ void batteryMonitor(void)
 	else
 		batteryInit();
 
-	messageSend(EventBatteryMonitor, 0, 100);
+	messageSend(EventBatteryMonitor, 0, T_MS(1000));
 }
 

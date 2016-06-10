@@ -30,9 +30,7 @@
 #include "ad.h"
 #include "timer.h"
 
-#define ENABLE_SERIAL	1
-
-#if ENABLE_SERIAL 
+#ifdef ENABLE_SERIAL 
 #include "utils/serial.h"
 #endif
 /*
@@ -73,18 +71,19 @@ void PORT_Init( void )
 {
 	/* Initialize the mode registers */
 	PM0	= PM0_DEFAULT | ~(1 << 0);
-	PM3 = PM3_DEFAULT;
+	PM2	= (1 << 2)| ~((1 << 3));
+	PM3 = PM3_DEFAULT | ~((1 << 2) | (1 << 3));
 	PM4 = PM4_DEFAULT;
 	PM6 = PM6_DEFAULT;
-	PM7 = PM7_DEFAULT;
+	PM7 = PM7_DEFAULT | ~((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5));
 	PM12 = PM12_DEFAULT | (1 << 0);
-	PM14 = PM14_DEFAULT;
+	PM14 = PM14_DEFAULT | (1 << 0);
 
 	/* Initialize the pull-up resistor option registers */
 	PU12 = (1 << 0);
 
 	/* Initialize the port registers */
-	P0 = (1 << 0);
+	P0 = (0 << 0);
 	P7 = 0x00;
 	P12 = (1 << 0);
 
@@ -196,7 +195,8 @@ void SystemInit( void )
 	
 	/* UART6 initiate */
 	#if ENABLE_SERIAL
-	 UART6_Init();
+	 serialInit();
+	 serialEnable(TRUE);
 	#endif
 
 	/* AD initiate */

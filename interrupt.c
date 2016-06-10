@@ -60,11 +60,14 @@ __interrupt void MD_INTP0( void )
 __interrupt void MD_INTTM50(void)
 {
 	/* TODO. Add user defined interrupt service routine */
-	gProject.timer1ms ++;
-	gProject.timer100ms ++;
+	gProject.timerMsgTick ++;
 
-	if(gProject.delayTimer > 0)
-		gProject.delayTimer --;
+	//
+	gProject.timerTick ++;
+
+	//
+	if(gProject.timerDelay)
+		gProject.timerDelay --;
 }
 
 
