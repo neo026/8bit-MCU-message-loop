@@ -5,7 +5,6 @@
 enum
 {
 	noPressFlag,
-	keyDebounceFlag,
 	shortPressFlag,
 	longPressFlag,
 	vLongPressFlag,

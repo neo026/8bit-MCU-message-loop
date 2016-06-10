@@ -48,7 +48,7 @@ void main(void)
 	uint8 timer1sec = 0;
 	uint8 timer100ms = 0;
 	
-	/*Delay 10ms, let system stable*/
+	/*Delay 5ms, let system stable*/
 	delay1ms(5);
 	
 	/*Start initial the system data*/

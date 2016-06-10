@@ -368,7 +368,7 @@ void batteryLoop(void)
 		}
     }
 
-	#if DBG_BAT_ENABLE
+	#if DBG_BAT_ENABLEx
 		debugMsg("battLevel:", gProject.battLevel);
 		debugStr("chargingCount: ");
 		debugNum((uint8)(theBattery.chargingCount >> 8));

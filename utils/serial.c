@@ -34,6 +34,7 @@
 
 #include "../macrodriver.h"
 #include "serial.h"
+#include "../private.h"
 
 /* For finding packet byte*/
 #define	FLAG_HEAD0		0
@@ -161,6 +162,10 @@ void serialSendString(const char *str)
 {
 	char *p = str;
 	uint8 str_size = 0;
+	// Don't forget this
+	if(NULL == p)
+		return;
+	
 	// send string
 	while(*p++ != '\0') str_size ++;
 	addTxBuffer((uint8 *)str, str_size);
@@ -192,9 +197,9 @@ void serialSendStringWithData(const char *str, uint8 argv)
 }
 
 /* format: HEADER + LENGTH + CMD + DATA+ CHECKSUM
-    data_size, is the size of pdata.
+    data_size, is the size of send data.
 */
-void sendPacket(uint8 cmd, uint8 *pdata, uint8 data_size)
+void sendPacket(uint8 cmd, uint8 *send_data, uint8 data_size)
 {
 	uint8 i;
 	uint8 checksum;
@@ -204,11 +209,11 @@ void sendPacket(uint8 cmd, uint8 *pdata, uint8 data_size)
 	length = data_size + MIN_PKT_LENGTH;
 	addTxBuffer(&length, 1);
 	addTxBuffer(&cmd, 1);	
-	addTxBuffer(pdata,data_size);
+	addTxBuffer(send_data,data_size);
 
 	checksum = cmd + length;
 	for(i = 0; i < data_size; i++)
-		checksum += pdata[i];
+		checksum += send_data[i];
 
 	checksum = ~checksum + 1;
 	addTxBuffer(&checksum, 1);
@@ -262,6 +267,8 @@ void rxLoop(void)
 
 	// get the specific byte
 	byte = buff[getIndex];
+
+    serialSendStringWithData("have:", byte);
 	
 	// HEADER + LENGTH + CMD + DATA+ CHECKSUM
 	if(rxFindFlag == FLAG_HEAD0)	//Find fist byte of header
@@ -273,15 +280,11 @@ void rxLoop(void)
 	else if(rxFindFlag == FLAG_HEAD1)
 	{
 		if(byte == packet_header[1])
-		{
 			rxFindFlag = FLAG_LENGTH;
-		}
-		else
-		{
-			rxFindFlag = FLAG_HEAD0;
-			// do not update the read index, because this situation will be ignore: **@xxx
-			return;
-		}
+		else if(byte = packet_header[0])// do not update the read index, because this situation will be ignore: **@xxx
+			rxFindFlag = FLAG_HEAD1;
+        else
+            rxFindFlag = FLAG_HEAD0;
 	}
 	else if(rxFindFlag == FLAG_LENGTH)
 	{
@@ -390,6 +393,7 @@ __interrupt void MD_INTSR6(void)
 		return;
 	
 	theSerial.rxBuffer[theSerial.rxPutIndex ++] = (uint8) RXB6;
+    serialSendString("yes\n");
 }
 #else
 	static char dumy = 0;

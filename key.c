@@ -128,6 +128,8 @@ void keyInit(void)
 {
 	theKey.keyStatus = noPressFlag;
 	theKey.keyValueLast = KEY_NONE;
+    theKey.keyRepeatTimeCnt = 0;
+	theKey.keyHoldTimeCnt = 0;
 }
 
 void pressKey(void)
@@ -135,7 +137,7 @@ void pressKey(void)
 	/*Key hold handle*/
 
 	//theKey.keyHoldTimeCnt ++;   --> Note don't write it here, it will overflow when someone is always pressing the key
-	if(keyDebounceFlag == theKey.keyStatus)
+    if(noPressFlag == theKey.keyStatus)
 	{
 		keyPress(theKey.keyValueLast);
 		theKey.keyStatus = shortPressFlag;
@@ -189,6 +191,8 @@ void releaseKey(void)
 	}
 
 	theKey.keyStatus = noPressFlag;
+    theKey.keyRepeatTimeCnt = 0;
+	theKey.keyHoldTimeCnt = 0;
 }
 
 void keyLoop(void)
@@ -202,15 +206,7 @@ void keyLoop(void)
 	if((KEY_NONE == temp) && (KEY_NONE == theKey.keyValueLast))
 		return;
 
-	if(LED_NONE == theKey.keyValueLast)
-	{
-		// there is a new key
-		theKey.keyStatus = keyDebounceFlag;
-		// clear
-		theKey.keyRepeatTimeCnt = 0;
-		theKey.keyHoldTimeCnt = 0;
-	}
-	else
+    if(KEY_NONE != theKey.keyValueLast)
 	{
 		if(KEY_NONE == temp)		// key was released
 		{

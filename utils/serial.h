@@ -167,7 +167,7 @@ void serialSendNum(uint8 num);
 void serialSendString(const char *str);
 void serialSendStringWithData(const char *str, uint8 argv);
 
-void sendPacket(uint8 cmd, uint8 *pdata, uint8 data_size);
+void sendPacket(uint8 cmd, uint8 *send_data, uint8 data_size);
 void cmdHandler(uint8 cmd, uint8 startIndex, uint8 data_size);
 //void gernateFrame(void);
 
